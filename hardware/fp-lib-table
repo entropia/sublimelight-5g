@@ -1,4 +1,5 @@
 (fp_lib_table
   (lib (name "meanwell_led_driver")(type "KiCad")(uri "${KIPRJMOD}/meanwell_led_driver.pretty")(options "")(descr ""))
   (lib (name "TBL005A-500")(type "KiCad")(uri "${KIPRJMOD}/TBL005A-500.pretty")(options "")(descr ""))
+  (lib (name "MTJ-88TX1-FSD-PGB")(type "KiCad")(uri "${KIPRJMOD}/MTJ-88TX1-FSD-PGB.pretty")(options "")(descr ""))
 )
