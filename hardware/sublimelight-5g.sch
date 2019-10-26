@@ -339,17 +339,6 @@ F 3 "~" V 10250 2625 50  0001 C CNN
 	1    10250 2600
 	-1   0    0    1   
 $EndComp
-$Comp
-L Device:R R3
-U 1 1 5DB00DCA
-P 8500 2800
-F 0 "R3" H 8570 2846 50  0000 L CNN
-F 1 "120R" H 8570 2755 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" V 8430 2800 50  0001 C CNN
-F 3 "~" H 8500 2800 50  0001 C CNN
-	1    8500 2800
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	8400 1200 8800 1200
 Wire Wire Line
@@ -418,10 +407,6 @@ Text Label 8150 2150 0    50   ~ 0
 RS485_A
 Text Label 8150 3000 0    50   ~ 0
 RS485_B
-Wire Wire Line
-	8500 3000 8500 2950
-Wire Wire Line
-	8500 2550 8500 2650
 Wire Wire Line
 	4000 2300 3600 2300
 Wire Wire Line
@@ -813,12 +798,12 @@ Wire Wire Line
 $Comp
 L Jumper:Jumper_2_Open JP3
 U 1 1 5DB13698
-P 8500 2350
-F 0 "JP3" V 8454 2448 50  0000 L CNN
-F 1 "Jumper_2_Open" V 8545 2448 50  0000 L CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 8500 2350 50  0001 C CNN
-F 3 "~" H 8500 2350 50  0001 C CNN
-	1    8500 2350
+P 8500 2800
+F 0 "JP3" V 8454 2898 50  0000 L CNN
+F 1 "Jumper_2_Open" V 8545 2898 50  0000 L CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 8500 2800 50  0001 C CNN
+F 3 "~" H 8500 2800 50  0001 C CNN
+	1    8500 2800
 	0    1    1    0   
 $EndComp
 $Comp
@@ -1086,11 +1071,11 @@ F 3 "~" H 6300 4100 50  0001 C CNN
 	1    6300 3900
 	1    0    0    -1  
 $EndComp
-Text Label 4100 4000 2    50   ~ 0
+Text Label 4100 4100 2    50   ~ 0
 PWM_W_COLD
 Wire Wire Line
 	4100 4000 3600 4000
-Text Label 4100 4100 2    50   ~ 0
+Text Label 4100 4000 2    50   ~ 0
 PWM_W_WARM
 Wire Wire Line
 	4100 4100 3600 4100
@@ -1151,4 +1136,19 @@ Text Label 4000 3900 2    50   ~ 0
 AUX_1_2
 Wire Wire Line
 	4000 3700 3600 3700
+$Comp
+L Device:R R3
+U 1 1 5DB00DCA
+P 8500 2350
+F 0 "R3" H 8570 2396 50  0000 L CNN
+F 1 "120R" H 8570 2305 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" V 8430 2350 50  0001 C CNN
+F 3 "~" H 8500 2350 50  0001 C CNN
+	1    8500 2350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8500 2600 8500 2500
+Wire Wire Line
+	8500 2200 8500 2150
 $EndSCHEMATC
