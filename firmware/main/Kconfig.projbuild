@@ -1,13 +1,15 @@
-menu "Example Configuration"
-config ESP_WIFI_SSID
-    string "WiFi SSID"
-    default "myssid"
-    help
-	SSID (network name) for the example to connect to.
+menu "SublimeLight-5G configuration"
 
-config ESP_WIFI_PASSWORD
-    string "WiFi Password"
-    default "mypassword"
+config SL5G_WIFI_SSID
+    string "WiFi SSID"
+    default "entropia-iot"
     help
-	WiFi password (WPA or WPA2) for the example to use.
+	SSID (network name) to connect to.
+
+config SL5G_WIFI_PASSWORD
+    string "WiFi Password"
+    default "password"
+    help
+	WiFi password (WPA or WPA2) to use.
+
 endmenu
