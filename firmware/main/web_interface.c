@@ -4,13 +4,21 @@
 #include <esp_http_server.h>
 #include <esp_log.h>
 
+#include "nvs_keys.h"
+
 static const char *TAG = "SL5G_WEB_INTERFACE";
 
 static httpd_handle_t server = NULL;
 
-static esp_err_t handle_get_info(httpd_req_t *req)
+extern const char info_page_html[];
+extern size_t info_page_html_length;
+
+static esp_err_t handle_get_root(httpd_req_t *req)
 {
-	httpd_resp_send(req, "Hallo", strlen("Hallo"));
+	nvs_handle_t nvsh;
+	esp_err_t ret = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvsh);
+
+	httpd_resp_send(req, info_page_html, info_page_html_length);
 	return ESP_OK;
 }
 
@@ -28,12 +36,19 @@ static httpd_handle_t start_web_interface()
 	httpd_uri_t uri;
 
 	uri = (httpd_uri_t) {
-		.uri = "/info",
+		.uri = "/",
 		.method = HTTP_GET,
-		.handler = handle_get_info,
+		.handler = handle_get_root,
 		.user_ctx = NULL,
 	};
 	ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri));
+
+	uri = (httpd_uri_t) {
+		.uri = "/updateconfig",
+		.method = HTTPD_POST,
+		.handler = handle_post_updateconfig,
+		.user_ctx = NULL,
+	};
 
 	return server;
 }
