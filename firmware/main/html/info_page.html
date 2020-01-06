@@ -13,7 +13,12 @@
       <p>MQTT broker: <input type="text" name="broker" value="%2$s" /></p>
       <p>MQTT topic prefix: <input type="text" name="topicprefix" value="%3$s" /></p>
 
-      <input type="submit" value="Submit" />
+      <input type="submit" value="Update configuration" />
+    </form>
+
+    <form action="/updatefirmware" method="post">
+      <p>Firmware image URL (*.bin): <input type="text" name="imageuri" value="" /></p>
+      <input type="submit" value="Update firmware from this URL" />
     </form>
   </body>
 </html>

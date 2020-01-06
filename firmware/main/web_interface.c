@@ -2,6 +2,7 @@
 
 #include <esp_event.h>
 #include <esp_http_server.h>
+#include <esp_https_ota.h>
 #include <esp_log.h>
 
 #include "nvs_config.h"
@@ -89,7 +90,7 @@ static esp_err_t handle_post_updateconfig(httpd_req_t *req)
 	httpd_req_recv(req, req_data, req->content_len);
 	req_data[req->content_len] = '\0';
 
-	ESP_LOGI(TAG, "Got POST : %s", req_data);
+	ESP_LOGI(TAG, "/updateconfig POST: %s", req_data);
 
 	char *req_value = malloc(req->content_len + 1);
 	if (!req_data) {
@@ -148,6 +149,56 @@ out_bad_request:
 	return bad_request(req);
 }
 
+static esp_err_t handle_post_updatefirmware(httpd_req_t *req)
+{
+	char *req_data = malloc(req->content_len + 1);
+	if (!req_data) {
+		return request_too_large(req);
+	}
+
+	httpd_req_recv(req, req_data, req->content_len);
+	req_data[req->content_len] = '\0';
+
+	ESP_LOGI(TAG, "/updatefirmware POST: %s", req_data);
+
+	char *req_value = malloc(req->content_len + 1);
+	if (!req_data) {
+		free(req_data);
+		return request_too_large(req);
+	}
+
+	esp_err_t ret = httpd_query_key_value(req_data, "imageuri", req_value, req->content_len);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	ret = url_decode_in_place(req_value);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+
+	ESP_LOGI(TAG, "Updating firmware from %s", req_value);
+
+	esp_http_client_config_t ota_client = {
+		.url = req_value,
+	};
+	ret = esp_https_ota(&ota_client);
+	if (ret == ESP_OK) {
+		httpd_resp_sendstr(req, "Firmware update OK, Rebooting...");
+
+		esp_restart();
+	} else {
+		httpd_resp_set_status(req, "500 Internal Server Error");
+		httpd_resp_sendstr(req, "Firmware update failed");
+	}
+
+	return ESP_OK;
+
+out_bad_request:
+	free(req_data);
+	free(req_value);
+	return bad_request(req);
+}
+
 static httpd_handle_t start_web_interface()
 {
 	httpd_handle_t server = NULL;
@@ -173,6 +224,14 @@ static httpd_handle_t start_web_interface()
 		.uri = "/updateconfig",
 		.method = HTTP_POST,
 		.handler = handle_post_updateconfig,
+		.user_ctx = NULL,
+	};
+	ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri));
+
+	uri = (httpd_uri_t) {
+		.uri = "/updatefirmware",
+		.method = HTTP_POST,
+		.handler = handle_post_updatefirmware,
 		.user_ctx = NULL,
 	};
 	ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri));
