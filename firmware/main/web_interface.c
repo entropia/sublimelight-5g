@@ -4,7 +4,7 @@
 #include <esp_http_server.h>
 #include <esp_log.h>
 
-#include "nvs_keys.h"
+#include "nvs_config.h"
 
 static const char *TAG = "SL5G_WEB_INTERFACE";
 
@@ -13,13 +13,139 @@ static httpd_handle_t server = NULL;
 extern const char info_page_html[];
 extern size_t info_page_html_length;
 
+static esp_err_t request_too_large(httpd_req_t *req)
+{
+	httpd_resp_set_status(req, "413 Payload Too Large");
+	httpd_resp_sendstr(req, "413 Payload Too Large");
+
+	return ESP_OK;
+}
+
+static esp_err_t bad_request(httpd_req_t *req)
+{
+	httpd_resp_set_status(req, "400 Bad Request");
+	httpd_resp_sendstr(req, "400 Bad Request");
+
+	return ESP_OK;
+}
+
+static esp_err_t url_decode_in_place(char *string)
+{
+	char *read = string;
+	char *write = string;
+
+	while (*read) {
+		if (*read == '%') {
+			if (!read[1] || !read[2]) {
+				// Input ended prematurely after '%'
+				return ESP_ERR_INVALID_ARG;
+			}
+			char code[3] = { read[1], read[2], '\0' };
+			unsigned int result;
+			if (sscanf(code, "%x", &result) != 1) {
+				return ESP_ERR_INVALID_ARG;
+			}
+			*write = (char) result;
+			write++;
+			read += 3;
+		} else if (*read == '+') {
+			*write = ' ';
+			write++;
+			read++;
+		} else {
+			*write = *read;
+			write++;
+			read++;
+		}
+	}
+
+	*write = '\0';
+
+	return ESP_OK;
+}
+
 static esp_err_t handle_get_root(httpd_req_t *req)
 {
-	nvs_handle_t nvsh;
-	esp_err_t ret = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvsh);
+	nvs_config_t *config = nvs_config_get();
 
-	httpd_resp_send(req, info_page_html, info_page_html_length);
+	char *html = NULL;
+	int written = asprintf(&html, info_page_html,
+			       config->board_name, config->mqtt_broker_uri, config->mqtt_topic_prefix);
+	assert(written > 0);
+
+	httpd_resp_send(req, html, written);
+	free(html);
+
 	return ESP_OK;
+}
+
+static esp_err_t handle_post_updateconfig(httpd_req_t *req)
+{
+	char *req_data = malloc(req->content_len + 1);
+	if (!req_data) {
+		return request_too_large(req);
+	}
+
+	httpd_req_recv(req, req_data, req->content_len);
+	req_data[req->content_len] = '\0';
+
+	ESP_LOGI(TAG, "Got POST : %s", req_data);
+
+	char *req_value = malloc(req->content_len + 1);
+	if (!req_data) {
+		free(req_data);
+		return request_too_large(req);
+	}
+
+	nvs_config_t *config = nvs_config_get();
+
+	esp_err_t ret = httpd_query_key_value(req_data, "boardname", req_value, req->content_len);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	ret = url_decode_in_place(req_value);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	config->board_name = strdup(req_value);
+
+	ret = httpd_query_key_value(req_data, "broker", req_value, req->content_len);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	ret = url_decode_in_place(req_value);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	config->mqtt_broker_uri = strdup(req_value);
+
+	ret = httpd_query_key_value(req_data, "topicprefix", req_value, req->content_len);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	ret = url_decode_in_place(req_value);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	config->mqtt_topic_prefix = strdup(req_value);
+
+	nvs_config_update(config);
+
+	httpd_resp_set_status(req, "303 See Other");
+	httpd_resp_set_hdr(req, "Location", "/");
+	httpd_resp_sendstr(req, "Configuration updated");
+
+	free(req_data);
+	free(req_value);
+	nvs_config_free(config);
+
+	return ESP_OK;
+
+out_bad_request:
+	free(req_data);
+	free(req_value);
+	nvs_config_free(config);
+	return bad_request(req);
 }
 
 static httpd_handle_t start_web_interface()
@@ -45,10 +171,11 @@ static httpd_handle_t start_web_interface()
 
 	uri = (httpd_uri_t) {
 		.uri = "/updateconfig",
-		.method = HTTPD_POST,
+		.method = HTTP_POST,
 		.handler = handle_post_updateconfig,
 		.user_ctx = NULL,
 	};
+	ESP_ERROR_CHECK(httpd_register_uri_handler(server, &uri));
 
 	return server;
 }

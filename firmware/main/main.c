@@ -3,8 +3,8 @@
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_netif.h>
-#include <nvs_flash.h>
 
+#include "nvs_config.h"
 #include "web_interface.h"
 #include "wlan.h"
 
@@ -14,7 +14,7 @@ void app_main(void)
 {
 	ESP_LOGI(TAG, "Welcome to SublimeLight-5G");
 
-	ESP_ERROR_CHECK(nvs_flash_init());
+	nvs_config_init();
 	ESP_ERROR_CHECK(esp_netif_init());
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 

@@ -12,4 +12,22 @@ config SL5G_WIFI_PASSWORD
     help
 	WiFi password (WPA or WPA2) to use.
 
+config SL5G_DEFAULT_BOARD_NAME
+    string "Default board name"
+    default "unnamed"
+    help
+        The default name for the board. This is just an identifier to keep track of the various boards.
+
+config SL5G_DEFAULT_MQTT_BROKER_URI
+    string "Default MQTT broker URI"
+    default "mqtt://mqtt.club.entropia.de"
+    help
+        Default URI of the MQTT broker to listen to. Be sure to inlcude the mqtt:// protocol specifier.
+
+config SL5G_DEFAULT_MQTT_TOPIC_PREFIX
+    string "Default MQTT topic prefix"
+    default "/fixme/not/final"
+    help
+        Default MQTT topic prefix to listen to. This setting should *not* end in /.
+
 endmenu
