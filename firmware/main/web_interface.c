@@ -71,7 +71,8 @@ static esp_err_t handle_get_root(httpd_req_t *req)
 
 	char *html = NULL;
 	int written = asprintf(&html, info_page_html,
-			       config->board_name, config->mqtt_broker_uri, config->mqtt_topic_prefix);
+			       "unknown", __DATE__ " " __TIME__,
+			       config->device_name, config->mqtt_broker_uri);
 	assert(written > 0);
 
 	httpd_resp_send(req, html, written);
@@ -108,7 +109,7 @@ static esp_err_t handle_post_updateconfig(httpd_req_t *req)
 	if (ret != ESP_OK) {
 		goto out_bad_request;
 	}
-	config->board_name = strdup(req_value);
+	config->device_name = strdup(req_value);
 
 	ret = httpd_query_key_value(req_data, "broker", req_value, req->content_len);
 	if (ret != ESP_OK) {
@@ -119,16 +120,6 @@ static esp_err_t handle_post_updateconfig(httpd_req_t *req)
 		goto out_bad_request;
 	}
 	config->mqtt_broker_uri = strdup(req_value);
-
-	ret = httpd_query_key_value(req_data, "topicprefix", req_value, req->content_len);
-	if (ret != ESP_OK) {
-		goto out_bad_request;
-	}
-	ret = url_decode_in_place(req_value);
-	if (ret != ESP_OK) {
-		goto out_bad_request;
-	}
-	config->mqtt_topic_prefix = strdup(req_value);
 
 	nvs_config_update(config);
 

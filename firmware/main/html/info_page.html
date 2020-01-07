@@ -8,10 +8,11 @@
   <body>
     <h1>SublimeLight-5G configuration</h1>
 
+    <p>Firmware revision %1$s built at %2$s</p>
+
     <form action="/updateconfig" method="post">
-      <p>Board name: <input type="text" name="boardname" value="%1$s" /></p>
-      <p>MQTT broker: <input type="text" name="broker" value="%2$s" /></p>
-      <p>MQTT topic prefix: <input type="text" name="topicprefix" value="%3$s" /></p>
+      <p>Board name: <input type="text" name="boardname" value="%3$s" /></p>
+      <p>MQTT broker URI: <input type="text" name="broker" value="%4$s" /></p>
 
       <input type="submit" value="Update configuration" />
     </form>

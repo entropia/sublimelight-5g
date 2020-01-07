@@ -1,12 +1,20 @@
 #ifndef SL5G_NVS_CONFIG_H
 #define SL5G_NVS_CONFIG_H
 
+/*
+ * MQTT namespace
+ *
+ * cmnd/$device/WARM 123
+ * cmnd/$device/COLD 456
+ *
+ * stat/$device/...
+ */
+
 #include <esp_event.h>
 
 typedef struct {
-	char *board_name;
+	char *device_name;
 	char *mqtt_broker_uri;
-	char *mqtt_topic_prefix;
 } nvs_config_t;
 
 ESP_EVENT_DECLARE_BASE(NVS_CONFIG_EVENT);
