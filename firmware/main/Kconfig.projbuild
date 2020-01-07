@@ -8,7 +8,6 @@ config SL5G_WIFI_SSID
 
 config SL5G_WIFI_PASSWORD
     string "WiFi Password"
-    default "password"
     help
 	WiFi password (WPA or WPA2) to use.
 

@@ -3,6 +3,10 @@
 
 #include <esp_err.h>
 
+#ifndef SL5G_WIFI_PASSWORD
+#error Wifi password not set. You will brick your devices.
+#endif
+
 /**
  * Initiate connection with WLAN.
  *
