@@ -23,4 +23,23 @@ config SL5G_DEFAULT_MQTT_BROKER_URI
     help
         Default URI of the MQTT broker to listen to. Be sure to inlcude the mqtt:// protocol specifier.
 
+config SL5G_PWM_FREQ
+    int "PWM Frequency"
+    default 6000
+    help
+        Frequency to use for the main LED's PWM in Hertz.
+        The hardware drivers specify a maximum of 1000 Hz, but it seems safe to go higher.
+
+config SL5G_FALLBACK_WARM_INTENSITY
+    int "Warm white fallback intensity"
+    default 100
+    help
+        Intensity for the warm white channel in fallback mode.
+
+config SL5G_FALLBACK_COLD_INTENSITY
+    int "Cold white fallback intensity"
+    default 100
+    help
+        Intensity for the cold white channel in fallback mode.
+
 endmenu
