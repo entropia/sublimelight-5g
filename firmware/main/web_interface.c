@@ -7,6 +7,7 @@
 
 #include <freertos/timers.h>
 
+#include "git_revision.h"
 #include "nvs_config.h"
 
 static const char *TAG = "SL5G_WEB_INTERFACE";
@@ -73,7 +74,7 @@ static esp_err_t handle_get_root(httpd_req_t *req)
 
 	char *html = NULL;
 	int written = asprintf(&html, info_page_html,
-			       "unknown", __DATE__ " " __TIME__,
+			       GIT_REVISION_ID, __DATE__ " " __TIME__,
 			       config->device_name, config->mqtt_broker_uri);
 	assert(written > 0);
 
