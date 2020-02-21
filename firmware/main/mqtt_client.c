@@ -119,14 +119,14 @@ static void on_wifi_disconnect(void *arg, esp_event_base_t base, int32_t event_i
 
 static void load_topics_from_nvs_config(void)
 {
-	if (topic_warm) {
-		free(topic_warm);
-		topic_warm = NULL;
-	}
-	if (topic_cold) {
-		free(topic_cold);
-		topic_cold = NULL;
-	}
+	free(topic_warm);
+	topic_warm = NULL;
+
+	free(topic_cold);
+	topic_cold = NULL;
+
+	free(topic_ip);
+	topic_cold = NULL;
 
 	nvs_config_t *config = nvs_config_get();
 	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
