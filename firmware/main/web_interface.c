@@ -5,6 +5,8 @@
 #include <esp_https_ota.h>
 #include <esp_log.h>
 
+#include <freertos/timers.h>
+
 #include "nvs_config.h"
 
 static const char *TAG = "SL5G_WEB_INTERFACE";
@@ -140,6 +142,11 @@ out_bad_request:
 	return bad_request(req);
 }
 
+static void reboot_timer_tick(TimerHandle_t timer)
+{
+	esp_restart();
+}
+
 static esp_err_t handle_post_updatefirmware(httpd_req_t *req)
 {
 	char *req_data = malloc(req->content_len + 1);
@@ -176,12 +183,17 @@ static esp_err_t handle_post_updatefirmware(httpd_req_t *req)
 	if (ret == ESP_OK) {
 		httpd_resp_sendstr(req, "Firmware update OK, Rebooting...");
 
-		esp_restart();
+		// Give the HTTP server some time to send the answer
+		// before we turn off the lights.
+		TimerHandle_t delay_reboot_timer = xTimerCreate("delay_reboot_timer", pdMS_TO_TICKS(1000), pdFALSE, NULL, reboot_timer_tick);
+		xTimerStart(delay_reboot_timer, 10);
 	} else {
 		httpd_resp_set_status(req, "500 Internal Server Error");
 		httpd_resp_sendstr(req, "Firmware update failed");
 	}
 
+	free(req_data);
+	free(req_value);
 	return ESP_OK;
 
 out_bad_request:
