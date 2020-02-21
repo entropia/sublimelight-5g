@@ -7,7 +7,7 @@
  * cmnd/$device/WARM 123
  * cmnd/$device/COLD 456
  *
- * stat/$device/...
+ * stat/$device/IP
  */
 
 #include <esp_event.h>

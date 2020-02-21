@@ -12,6 +12,9 @@ static esp_mqtt_client_handle_t client = NULL;
 static char *topic_warm = NULL;
 static char *topic_cold = NULL;
 
+static char *topic_ip = NULL;
+static char *current_ip = NULL;
+
 static void unsubscribe_from_topics(esp_mqtt_client_handle_t client)
 {
 	int msg_id = esp_mqtt_client_unsubscribe(client, topic_warm);
@@ -38,10 +41,20 @@ static void subscribe_to_topics(esp_mqtt_client_handle_t client)
 	ESP_LOGI(TAG, "Topic subscription requests sent");
 }
 
+static void publish_current_ip(esp_mqtt_client_handle_t client)
+{
+	int msg_id = esp_mqtt_client_publish(client, topic_ip, current_ip, 0, 1, true);
+	if (msg_id == -1) {
+		ESP_LOGW(TAG, "Could not publish to IP topic");
+	}
+	ESP_LOGI(TAG, "IP update published. Address is %s", current_ip);
+}
+
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
 	esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t) event_data;
 	subscribe_to_topics(event->client);
+	publish_current_ip(event->client);
 }
 
 static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -98,12 +111,20 @@ static void stop_mqtt_client(esp_mqtt_client_handle_t client)
 static void on_dhcp_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
 {
 	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) arg;
+	ip_event_got_ip_t *event = (ip_event_got_ip_t*) event_data;
+
+	free(current_ip);
+	current_ip = NULL;
+	esp_ip4_addr_t ip = event->ip_info.ip;
+	asprintf(&current_ip, IPSTR, IP2STR(&ip));
 
 	if (*client == NULL) {
 		ESP_LOGI(TAG, "Starting MQTT client");
 		*client = start_mqtt_client();
+		// The client will publish our IP after startup
 	} else {
-		ESP_LOGW(TAG, "Got new IP but MQTT client already running");
+		ESP_LOGW(TAG, "Got new IP %s but MQTT client already running", current_ip);
+		publish_current_ip(*client);
 	}
 }
 
@@ -131,6 +152,7 @@ static void load_topics_from_nvs_config(void)
 	nvs_config_t *config = nvs_config_get();
 	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
 	asprintf(&topic_cold, "cmnd/%s/COLD", config->device_name);
+	asprintf(&topic_ip,   "stat/%s/IP",   config->device_name);
 	nvs_config_free(config);
 }
 
