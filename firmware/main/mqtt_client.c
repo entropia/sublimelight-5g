@@ -15,19 +15,6 @@ static char *topic_cold = NULL;
 static char *topic_ip = NULL;
 static char *current_ip = NULL;
 
-static void unsubscribe_from_topics(esp_mqtt_client_handle_t client)
-{
-	int msg_id = esp_mqtt_client_unsubscribe(client, topic_warm);
-	if (msg_id == -1) {
-		ESP_LOGW(TAG, "Could not unsubscribe from warm-white topic");
-	}
-	msg_id = esp_mqtt_client_unsubscribe(client, topic_cold);
-	if (msg_id == -1) {
-		ESP_LOGW(TAG, "Could not unsubscribe from cold-white topic");
-	}
-	ESP_LOGI(TAG, "Topic unsubscription requests sent");
-}
-
 static void subscribe_to_topics(esp_mqtt_client_handle_t client)
 {
 	int msg_id = esp_mqtt_client_subscribe(client, topic_warm, 1);
@@ -89,15 +76,32 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 
 static esp_mqtt_client_handle_t start_mqtt_client()
 {
-	esp_mqtt_client_config_t config = {
-		.uri = CONFIG_SL5G_DEFAULT_MQTT_BROKER_URI,
-	};
+	nvs_config_t *config = nvs_config_get();
 
-	esp_mqtt_client_handle_t client = esp_mqtt_client_init(&config);
+	free(topic_warm);
+	topic_warm = NULL;
+
+	free(topic_cold);
+	topic_cold = NULL;
+
+	free(topic_ip);
+	topic_cold = NULL;
+
+	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
+	asprintf(&topic_cold, "cmnd/%s/COLD", config->device_name);
+	asprintf(&topic_ip,   "stat/%s/IP",   config->device_name);
+
+	esp_mqtt_client_config_t client_config = {
+		// No need to the URL, the MQTT client internally does a strdup
+		.uri = config->mqtt_broker_uri,
+	};
+	esp_mqtt_client_handle_t client = esp_mqtt_client_init(&client_config);
 	assert(client);
 	esp_mqtt_client_register_event(client, MQTT_EVENT_CONNECTED, on_mqtt_connected, client);
 	esp_mqtt_client_register_event(client, MQTT_EVENT_DATA, on_mqtt_received, client);
 	esp_mqtt_client_start(client);
+
+	nvs_config_free(config);
 
 	return client;
 }
@@ -105,6 +109,8 @@ static esp_mqtt_client_handle_t start_mqtt_client()
 static void stop_mqtt_client(esp_mqtt_client_handle_t client)
 {
 	ESP_LOGI(TAG, "Shutting down MQTT client");
+	esp_mqtt_client_stop(client);
+	esp_mqtt_client_destroy(client);
 	led_fallback();
 }
 
@@ -138,40 +144,18 @@ static void on_wifi_disconnect(void *arg, esp_event_base_t base, int32_t event_i
 	}
 }
 
-static void load_topics_from_nvs_config(void)
-{
-	free(topic_warm);
-	topic_warm = NULL;
-
-	free(topic_cold);
-	topic_cold = NULL;
-
-	free(topic_ip);
-	topic_cold = NULL;
-
-	nvs_config_t *config = nvs_config_get();
-	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
-	asprintf(&topic_cold, "cmnd/%s/COLD", config->device_name);
-	asprintf(&topic_ip,   "stat/%s/IP",   config->device_name);
-	nvs_config_free(config);
-}
-
 static void on_nvs_config_changed(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
 {
 	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) arg;
 
 	if (*client != NULL) {
-		unsubscribe_from_topics(*client);
-	}
-	load_topics_from_nvs_config();
-	if (*client != NULL) {
-		subscribe_to_topics(*client);
+		stop_mqtt_client(*client);
+		start_mqtt_client(*client);
 	}
 }
 
 void mqtt_client_init(void)
 {
-	load_topics_from_nvs_config();
 	ESP_ERROR_CHECK(esp_event_handler_register(NVS_CONFIG_EVENT, NVS_CONFIG_EVENT_CHANGED, &on_nvs_config_changed, &client));
 
 	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_dhcp_got_ip, &client));
