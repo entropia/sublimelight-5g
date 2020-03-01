@@ -32,13 +32,13 @@ config SL5G_PWM_FREQ
 
 config SL5G_FALLBACK_WARM_INTENSITY
     int "Warm white fallback intensity"
-    default 100
+    default 2000
     help
         Intensity for the warm white channel in fallback mode.
 
 config SL5G_FALLBACK_COLD_INTENSITY
     int "Cold white fallback intensity"
-    default 100
+    default 2000
     help
         Intensity for the cold white channel in fallback mode.
 
