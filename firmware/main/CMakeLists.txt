@@ -8,6 +8,6 @@ set(COMPONENT_EMBED_TXTFILES "html/info_page.html")
 
 register_component()
 
-add_custom_command(OUTPUT ${COMPONENT_PATH}/git_revision.h /tmp/__phony_command_always_run__
+add_custom_command(OUTPUT ${COMPONENT_PATH}/git_revision.h
     COMMAND ${COMPONENT_PATH}/../scripts/make-git-revision.sh ${COMPONENT_PATH}/git_revision.h
     VERBATIM)
