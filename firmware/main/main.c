@@ -9,6 +9,7 @@
 #include "nvs_config.h"
 #include "web_interface.h"
 #include "wlan.h"
+#include "light_manager.h"
 
 static const char *TAG = "SL5G_MAIN";
 
@@ -26,4 +27,5 @@ void app_main(void)
 	web_interface_init();
 	mqtt_client_init();
 	wlan_connect();
+	light_manager_init();
 }

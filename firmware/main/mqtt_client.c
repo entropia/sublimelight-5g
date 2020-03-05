@@ -5,12 +5,15 @@
 
 #include "led.h"
 #include "nvs_config.h"
+#include "light_manager.h"
 
 static const char *TAG = "SL5G_MQTT_CLIENT";
 
 static esp_mqtt_client_handle_t client = NULL;
 static char *topic_warm = NULL;
 static char *topic_cold = NULL;
+static char *state_topic_warm = NULL;
+static char *state_topic_cold = NULL;
 
 static char *topic_ip = NULL;
 static char *current_ip = NULL;
@@ -35,6 +38,20 @@ static void publish_current_ip(esp_mqtt_client_handle_t client)
 		ESP_LOGW(TAG, "Could not publish to IP topic");
 	}
 	ESP_LOGI(TAG, "IP update published. Address is %s", current_ip);
+}
+
+static void publish_current_state(esp_mqtt_client_handle_t client, light_manager_state_t *state)
+{
+	char *warm_value;
+	char *cold_value;
+	asprintf(&warm_value, "%d", state->warm_value);
+	asprintf(&cold_value, "%d", state->cold_value);
+
+	// TODO: Error handling
+	esp_mqtt_client_publish(client, state_topic_warm, warm_value, 0, 1, true);
+	ESP_LOGI(TAG, "Warm value update published. Value is %s", warm_value);
+	esp_mqtt_client_publish(client, state_topic_cold, cold_value, 0, 1, true);
+	ESP_LOGI(TAG, "Cold value update published. Value is %s", cold_value);
 }
 
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -64,14 +81,23 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 	sscanf(data, "%u", &intensity);
 
 	if (strncmp(event->topic, topic_warm, strlen(topic_warm)) == 0) {
-		led_set(WARM_WHITE, intensity);
+// 		led_set(WARM_WHITE, intensity);
+		set_warm(intensity);
 	} else if (strncmp(event->topic, topic_cold, strlen(topic_cold)) == 0) {
-		led_set(COLD_WHITE, intensity);
+// 		led_set(COLD_WHITE, intensity);
+		set_cold(intensity);
 	} else {
 		ESP_LOGI(TAG, "Not handled");
 	}
 
 	free(data);
+}
+
+static void on_light_manager_state_changed(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{
+	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) handler_args;
+	light_manager_state_t *state = (light_manager_state_t*) event_data;
+	publish_current_state(*client, state);
 }
 
 static esp_mqtt_client_handle_t start_mqtt_client()
@@ -84,11 +110,19 @@ static esp_mqtt_client_handle_t start_mqtt_client()
 	free(topic_cold);
 	topic_cold = NULL;
 
+	free(state_topic_warm);
+	state_topic_warm = NULL;
+
+	free(state_topic_cold);
+	state_topic_cold = NULL;
+
 	free(topic_ip);
 	topic_cold = NULL;
 
 	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
 	asprintf(&topic_cold, "cmnd/%s/COLD", config->device_name);
+	asprintf(&state_topic_warm, "stat/%s/WARM", config->device_name);
+	asprintf(&state_topic_cold, "stat/%s/COLD", config->device_name);
 	asprintf(&topic_ip,   "stat/%s/IP",   config->device_name);
 
 	esp_mqtt_client_config_t client_config = {
@@ -157,6 +191,7 @@ static void on_nvs_config_changed(void *arg, esp_event_base_t base, int32_t even
 void mqtt_client_init(void)
 {
 	ESP_ERROR_CHECK(esp_event_handler_register(NVS_CONFIG_EVENT, NVS_CONFIG_EVENT_CHANGED, &on_nvs_config_changed, &client));
+	ESP_ERROR_CHECK(esp_event_handler_register(LIGHT_MANAGER_EVENT, LIGHT_MANAGER_EVENT_STATE_CHANGED, &on_light_manager_state_changed, &client));
 
 	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_dhcp_got_ip, &client));
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect, &client));
