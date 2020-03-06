@@ -42,8 +42,8 @@ static void publish_current_ip(esp_mqtt_client_handle_t client)
 
 static void publish_current_state(esp_mqtt_client_handle_t client, light_manager_state_t *state)
 {
-	char *warm_value;
-	char *cold_value;
+	char *warm_value = NULL;
+	char *cold_value = NULL;
 	asprintf(&warm_value, "%d", state->warm_value);
 	asprintf(&cold_value, "%d", state->cold_value);
 
@@ -52,6 +52,9 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 	ESP_LOGI(TAG, "Warm value update published. Value is %s", warm_value);
 	esp_mqtt_client_publish(client, state_topic_cold, cold_value, 0, 1, true);
 	ESP_LOGI(TAG, "Cold value update published. Value is %s", cold_value);
+
+	free(warm_value);
+	free(cold_value);
 }
 
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
