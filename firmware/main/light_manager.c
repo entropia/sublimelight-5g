@@ -19,17 +19,17 @@ void set_warm(unsigned intensity)
 {
 	led_set(WARM_WHITE, intensity);
 	state->warm_value = intensity;
-	update_state();
+	update_state(LIGHT_MANAGER_EVENT_WARM_CHANGED);
 }
 
 void set_cold(unsigned intensity)
 {
 	led_set(COLD_WHITE, intensity);
 	state->cold_value = intensity;
-	update_state();
+	update_state(LIGHT_MANAGER_EVENT_COLD_CHANGED);
 }
 
-void update_state()
+void update_state(light_manager_event_t event)
 {
-	esp_event_post(LIGHT_MANAGER_EVENT, LIGHT_MANAGER_EVENT_STATE_CHANGED, state, sizeof(light_manager_state_t), portMAX_DELAY);
+	esp_event_post(LIGHT_MANAGER_EVENT, event, state, sizeof(light_manager_state_t), portMAX_DELAY);
 }

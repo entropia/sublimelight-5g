@@ -6,6 +6,7 @@
 #include "led.h"
 #include "nvs_config.h"
 #include "light_manager.h"
+#include "topic_builder.h"
 
 static const char *TAG = "SL5G_MQTT_CLIENT";
 
@@ -33,25 +34,38 @@ static void subscribe_to_topics(esp_mqtt_client_handle_t client)
 
 static void publish_current_ip(esp_mqtt_client_handle_t client)
 {
-	int msg_id = esp_mqtt_client_publish(client, topic_ip, current_ip, 0, 1, true);
+	stat_event_t event = STAT_IP;
+	char *stat_topic_ip = stat_topic_lookup(event);
+
+	int msg_id = esp_mqtt_client_publish(client, stat_topic_ip, current_ip, 0, 1, true);
 	if (msg_id == -1) {
 		ESP_LOGW(TAG, "Could not publish to IP topic");
 	}
 	ESP_LOGI(TAG, "IP update published. Address is %s", current_ip);
 }
 
-static void publish_current_state(esp_mqtt_client_handle_t client, light_manager_state_t *state)
+static void publish_current_state(esp_mqtt_client_handle_t client, light_manager_state_t *state, int32_t event_id)
 {
-	char *warm_value;
-	char *cold_value;
-	asprintf(&warm_value, "%d", state->warm_value);
-	asprintf(&cold_value, "%d", state->cold_value);
-
+	char *value;
+	char *topic;
+	switch (event_id)
+	{
+		case LIGHT_MANAGER_EVENT_WARM_CHANGED:
+			asprintf(&value, "%d", state->warm_value);
+			topic = stat_topic_lookup(STAT_WARM);
+			ESP_LOGI(TAG, "Warm value update publish scheduled. Value is %s", value);
+			break;
+		case LIGHT_MANAGER_EVENT_COLD_CHANGED:
+			asprintf(&value, "%d", state->cold_value);
+			topic = stat_topic_lookup(STAT_COLD);
+			ESP_LOGI(TAG, "Cold value update publish scheduled. Value is %s", value);
+			break;
+		default:
+			asprintf(&value, "shutupcompiler");
+			asprintf(&topic, "shutupcompiler");
+	}
 	// TODO: Error handling
-	esp_mqtt_client_publish(client, state_topic_warm, warm_value, 0, 1, true);
-	ESP_LOGI(TAG, "Warm value update published. Value is %s", warm_value);
-	esp_mqtt_client_publish(client, state_topic_cold, cold_value, 0, 1, true);
-	ESP_LOGI(TAG, "Cold value update published. Value is %s", cold_value);
+	esp_mqtt_client_publish(client, topic, value, 0, 1, true);
 }
 
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -97,7 +111,7 @@ static void on_light_manager_state_changed(void *handler_args, esp_event_base_t 
 {
 	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) handler_args;
 	light_manager_state_t *state = (light_manager_state_t*) event_data;
-	publish_current_state(*client, state);
+	publish_current_state(*client, state, event_id);
 }
 
 static esp_mqtt_client_handle_t start_mqtt_client()
@@ -191,7 +205,7 @@ static void on_nvs_config_changed(void *arg, esp_event_base_t base, int32_t even
 void mqtt_client_init(void)
 {
 	ESP_ERROR_CHECK(esp_event_handler_register(NVS_CONFIG_EVENT, NVS_CONFIG_EVENT_CHANGED, &on_nvs_config_changed, &client));
-	ESP_ERROR_CHECK(esp_event_handler_register(LIGHT_MANAGER_EVENT, LIGHT_MANAGER_EVENT_STATE_CHANGED, &on_light_manager_state_changed, &client));
+	ESP_ERROR_CHECK(esp_event_handler_register(LIGHT_MANAGER_EVENT, ESP_EVENT_ANY_ID, &on_light_manager_state_changed, &client));
 
 	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_dhcp_got_ip, &client));
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect, &client));

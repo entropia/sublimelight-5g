@@ -10,9 +10,11 @@ typedef struct {
 
 ESP_EVENT_DECLARE_BASE(LIGHT_MANAGER_EVENT);
 
-enum {
+typedef enum {
 	LIGHT_MANAGER_EVENT_STATE_CHANGED,
-};
+	LIGHT_MANAGER_EVENT_WARM_CHANGED,
+	LIGHT_MANAGER_EVENT_COLD_CHANGED,
+} light_manager_event_t;
 
 void light_manager_init();
 
