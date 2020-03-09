@@ -50,12 +50,10 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 		case LIGHT_MANAGER_EVENT_WARM_CHANGED:
 			asprintf(&value, "%d", state->warm_value);
 			topic = stat_topic_lookup(STAT_WARM);
-			ESP_LOGI(TAG, "Warm value update publish scheduled. Value is %s", value);
 			break;
 		case LIGHT_MANAGER_EVENT_COLD_CHANGED:
 			asprintf(&value, "%d", state->cold_value);
 			topic = stat_topic_lookup(STAT_COLD);
-			ESP_LOGI(TAG, "Cold value update publish scheduled. Value is %s", value);
 			break;
 		default:
 			asprintf(&value, "shutupcompiler");
@@ -63,9 +61,9 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 	}
 	// TODO: Error handling
 	esp_mqtt_client_publish(client, topic, value, 0, 1, true);
+	ESP_LOGI(TAG, "Value update published. Topic is %s. Value is %s", topic, value);
 
 	free(value);
-	free(topic);
 }
 
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -82,7 +80,7 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 	ESP_LOGI(TAG, "MQTT packet received. Topic: %.*s, Data: %.*s",
 		 event->topic_len, event->topic, event->data_len, event->data);
 
-	// We canot rely on event->data being NULL-terminated, so copy it into another buffer
+	// We cannot rely on event->data being NULL-terminated, so copy it into another buffer
 	char *data = malloc(event->data_len + 1);
 	if (!data) {
 		ESP_LOGI(TAG, "MQTT packet ignored as data is too large.");
@@ -94,14 +92,38 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 	unsigned int intensity;
 	sscanf(data, "%u", &intensity);
 
-	if (strncmp(event->topic, topic_warm, strlen(topic_warm)) == 0) {
-// 		led_set(WARM_WHITE, intensity);
-		set_warm(intensity);
-	} else if (strncmp(event->topic, topic_cold, strlen(topic_cold)) == 0) {
-// 		led_set(COLD_WHITE, intensity);
-		set_cold(intensity);
-	} else {
-		ESP_LOGI(TAG, "Not handled");
+	// We cannot rely on event->topic being NULL-terminated, so copy it into another buffer
+	char *topic = malloc(event->topic_len + 1);
+	memcpy(topic, event->topic, event->topic_len);
+	topic[event->topic_len] = '\0';
+
+	// We only receive events that we have subscribed to and trust the MQTT broker.
+	char *topic_suffix = strrchr(topic, '/') + 1;
+	cmnd_event_t cmnd_event = cmnd_topic_lookup(topic_suffix);
+	switch (cmnd_event)
+	{
+		case CMND_ENABLE:
+			ESP_LOGI(TAG, "Not yet implemented");
+			break;
+		case CMND_WARM:
+			set_warm(intensity);
+			ESP_LOGI(TAG, "Recognized topic WARM. Setting to %d", intensity);
+			break;
+		case CMND_COLD:
+			set_cold(intensity);
+			ESP_LOGI(TAG, "Recognized topic COLD. Setting to %d", intensity);
+			break;
+		case CMND_BRIGHTNESS_AUTO:
+			ESP_LOGI(TAG, "Not yet implemented");
+			break;
+		case CMND_BRIGHTNESS:
+			ESP_LOGI(TAG, "Not yet implemented");
+			break;
+		case CMND_TEMPERATURE:
+			ESP_LOGI(TAG, "Not yet implemented");
+			break;
+		default:
+			ESP_LOGI(TAG, "Not handled");
 	}
 
 	free(data);

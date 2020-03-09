@@ -51,6 +51,17 @@ char* stat_topic_lookup(stat_event_t event)
 	return stat_map[event].topic;
 }
 
+cmnd_event_t cmnd_topic_lookup(char *topic)
+{
+	for (int i = 0; i < 6; i++)
+	{
+		if(!strcmp(topic, cmnd_map[i].topic)) {
+			return cmnd_map[i].event;
+		}
+	}
+	return -1;
+}
+
 static void build_topics()
 {
 	nvs_config_t *config = nvs_config_get();
@@ -61,6 +72,12 @@ static void build_topics()
 		//entry->event = i;
 		stat_map[i].event = i; // Why does this work?
 		asprintf(&stat_map[i].topic, "%s/%s/%s", STAT_TOPIC_PREFIX, config->device_name, STAT_TOPIC_SUFFIXES[i]);
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		cmnd_map[i].event = i;
+		asprintf(&cmnd_map[i].topic, "%s", CMND_TOPIC_SUFFIXES[i]);
 	}
 }
 
