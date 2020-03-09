@@ -13,10 +13,7 @@ static const char *TAG = "SL5G_MQTT_CLIENT";
 static esp_mqtt_client_handle_t client = NULL;
 static char *topic_warm = NULL;
 static char *topic_cold = NULL;
-static char *state_topic_warm = NULL;
-static char *state_topic_cold = NULL;
 
-static char *topic_ip = NULL;
 static char *current_ip = NULL;
 
 static void subscribe_to_topics(esp_mqtt_client_handle_t client)
@@ -127,20 +124,8 @@ static esp_mqtt_client_handle_t start_mqtt_client()
 	free(topic_cold);
 	topic_cold = NULL;
 
-	free(state_topic_warm);
-	state_topic_warm = NULL;
-
-	free(state_topic_cold);
-	state_topic_cold = NULL;
-
-	free(topic_ip);
-	topic_cold = NULL;
-
 	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
 	asprintf(&topic_cold, "cmnd/%s/COLD", config->device_name);
-	asprintf(&state_topic_warm, "stat/%s/WARM", config->device_name);
-	asprintf(&state_topic_cold, "stat/%s/COLD", config->device_name);
-	asprintf(&topic_ip,   "stat/%s/IP",   config->device_name);
 
 	esp_mqtt_client_config_t client_config = {
 		// No need to the URL, the MQTT client internally does a strdup
