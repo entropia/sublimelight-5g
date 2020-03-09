@@ -46,8 +46,8 @@ static void publish_current_ip(esp_mqtt_client_handle_t client)
 
 static void publish_current_state(esp_mqtt_client_handle_t client, light_manager_state_t *state, int32_t event_id)
 {
-	char *value;
-	char *topic;
+	char *value = NULL;
+	char *topic = NULL;
 	switch (event_id)
 	{
 		case LIGHT_MANAGER_EVENT_WARM_CHANGED:
@@ -66,6 +66,9 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 	}
 	// TODO: Error handling
 	esp_mqtt_client_publish(client, topic, value, 0, 1, true);
+
+	free(value);
+	free(topic);
 }
 
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
