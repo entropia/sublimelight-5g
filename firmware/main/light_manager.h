@@ -4,8 +4,8 @@
 #include <esp_event.h>
 
 typedef struct {
-	short int warm_value;
-	short int cold_value;
+	unsigned warm_value;
+	unsigned cold_value;
 } light_manager_state_t;
 
 ESP_EVENT_DECLARE_BASE(LIGHT_MANAGER_EVENT);
