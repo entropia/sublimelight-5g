@@ -5,6 +5,7 @@
 ESP_EVENT_DEFINE_BASE(LIGHT_MANAGER_EVENT);
 
 static const unsigned MAX_ONE_CHANNEL = 8191;
+static const unsigned MAX_TWO_CHANNELS = 2 * MAX_ONE_CHANNEL;
 
 light_manager_state_t state;
 
@@ -95,5 +96,12 @@ void set_brightness(unsigned brightness)
 void set_temperature(double temperature)
 {
 	update_state_temperature(temperature);
+	update_cold_warm_from_brightness_temperature();
+}
+
+void set_brightness_auto(unsigned brightness)
+{
+	update_state_brightness(brightness);
+	update_state_temperature(0.5 * (((double) brightness) / ((double) MAX_TWO_CHANNELS)));
 	update_cold_warm_from_brightness_temperature();
 }

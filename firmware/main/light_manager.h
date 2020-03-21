@@ -31,4 +31,6 @@ void set_brightness(unsigned brightness);
 
 void set_temperature(double temperature);
 
+void set_brightness_auto(unsigned brightness);
+
 #endif
