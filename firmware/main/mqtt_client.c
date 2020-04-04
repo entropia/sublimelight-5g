@@ -13,6 +13,9 @@ static const char *TAG = "SL5G_MQTT_CLIENT";
 static esp_mqtt_client_handle_t client = NULL;
 static char *topic_warm = NULL;
 static char *topic_cold = NULL;
+static char *topic_brightness = NULL;
+static char *topic_temperature = NULL;
+
 
 static char *current_ip = NULL;
 
@@ -25,6 +28,14 @@ static void subscribe_to_topics(esp_mqtt_client_handle_t client)
 	msg_id = esp_mqtt_client_subscribe(client, topic_cold, 1);
 	if (msg_id == -1) {
 		ESP_LOGW(TAG, "Could not subscribe to cold-white topic");
+	}
+	msg_id = esp_mqtt_client_subscribe(client, topic_brightness, 1);
+	if (msg_id == -1) {
+		ESP_LOGW(TAG, "Could not subscribe to brightness topic");
+	}
+	msg_id = esp_mqtt_client_subscribe(client, topic_temperature, 1);
+	if (msg_id == -1) {
+		ESP_LOGW(TAG, "Could not subscribe to temperature topic");
 	}
 	ESP_LOGI(TAG, "Topic subscription requests sent");
 }
@@ -55,9 +66,17 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 			asprintf(&value, "%d", state->cold_value);
 			topic = stat_topic_lookup(STAT_COLD);
 			break;
+		case LIGHT_MANAGER_EVENT_BRIGHTNESS_CHANGED:
+			asprintf(&value, "%d", state->brightness);
+			topic = stat_topic_lookup(STAT_BRIGHTNESS);
+			break;
+		case LIGHT_MANAGER_EVENT_TEMPERATURE_CHANGED:
+			asprintf(&value, "%f", state->temperature);
+			topic = stat_topic_lookup(STAT_TEMPERATURE);
+			break;
 		default:
-			asprintf(&value, "shutupcompiler");
-			asprintf(&topic, "shutupcompiler");
+			ESP_LOGE(TAG, "Ignoring unknown state update from light manager: %d", event_id);
+			return;
 	}
 	// TODO: Error handling
 	esp_mqtt_client_publish(client, topic, value, 0, 1, true);
@@ -89,44 +108,70 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 	memcpy(data, event->data, event->data_len);
 	data[event->data_len] = '\0';
 
-	unsigned int intensity;
-	sscanf(data, "%u", &intensity);
-
 	// We cannot rely on event->topic being NULL-terminated, so copy it into another buffer
 	char *topic = malloc(event->topic_len + 1);
+	if (!topic) {
+		ESP_LOGI(TAG, "MQTT packet ignored as topic is too large.");
+		free(data);
+		return;
+	}
 	memcpy(topic, event->topic, event->topic_len);
 	topic[event->topic_len] = '\0';
 
 	// We only receive events that we have subscribed to and trust the MQTT broker.
 	char *topic_suffix = strrchr(topic, '/') + 1;
 	cmnd_event_t cmnd_event = cmnd_topic_lookup(topic_suffix);
+
+	// Special case for temperature as it carries a double instead of unsigned payload
+	if (cmnd_event == CMND_TEMPERATURE) {
+		double temperature;
+		bool temperature_valid = (sscanf(data, "%lf", &temperature) == 1);
+
+		if (!temperature_valid) {
+			ESP_LOGW(TAG, "Received malformed MQTT (temperature): Topic %s, data %s\n", topic, data);
+			goto out;
+		}
+
+		ESP_LOGI(TAG, "Recognized topic TEMPERATURE. Setting to %f", temperature);
+		set_temperature(temperature);
+		goto out;
+	}
+
+	unsigned int intensity;
+	bool intensity_valid = (sscanf(data, "%u", &intensity) == 1);
+
+	if (!intensity_valid) {
+		ESP_LOGW(TAG, "Received malformed MQTT: Topic %s, data %s\n", topic, data);
+		goto out;
+	}
+
 	switch (cmnd_event)
 	{
 		case CMND_ENABLE:
 			ESP_LOGI(TAG, "Not yet implemented");
 			break;
 		case CMND_WARM:
+			ESP_LOGI(TAG, "Recognized topic WARM. Setting to %u", intensity);
 			set_warm(intensity);
-			ESP_LOGI(TAG, "Recognized topic WARM. Setting to %d", intensity);
 			break;
 		case CMND_COLD:
+			ESP_LOGI(TAG, "Recognized topic COLD. Setting to %u", intensity);
 			set_cold(intensity);
-			ESP_LOGI(TAG, "Recognized topic COLD. Setting to %d", intensity);
 			break;
 		case CMND_BRIGHTNESS_AUTO:
 			ESP_LOGI(TAG, "Not yet implemented");
 			break;
 		case CMND_BRIGHTNESS:
-			ESP_LOGI(TAG, "Not yet implemented");
-			break;
-		case CMND_TEMPERATURE:
-			ESP_LOGI(TAG, "Not yet implemented");
+			ESP_LOGI(TAG, "Recognized topic BRIGHTESS. Setting to %u", intensity);
+			set_brightness(intensity);
 			break;
 		default:
 			ESP_LOGI(TAG, "Not handled");
 	}
 
+out:
 	free(data);
+	free(topic);
 }
 
 static void on_light_manager_state_changed(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -146,11 +191,19 @@ static esp_mqtt_client_handle_t start_mqtt_client()
 	free(topic_cold);
 	topic_cold = NULL;
 
+	free(topic_brightness);
+	topic_brightness = NULL;
+
+	free(topic_temperature);
+	topic_temperature = NULL;
+
 	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
 	asprintf(&topic_cold, "cmnd/%s/COLD", config->device_name);
+	asprintf(&topic_brightness, "cmnd/%s/BRIGHTNESS", config->device_name);
+	asprintf(&topic_temperature, "cmnd/%s/TEMPERATURE", config->device_name);
 
 	esp_mqtt_client_config_t client_config = {
-		// No need to the URL, the MQTT client internally does a strdup
+		// No need to copy the URL, the MQTT client internally does a strdup
 		.uri = config->mqtt_broker_uri,
 	};
 	esp_mqtt_client_handle_t client = esp_mqtt_client_init(&client_config);
