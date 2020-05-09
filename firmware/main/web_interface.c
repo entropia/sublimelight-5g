@@ -182,7 +182,7 @@ static esp_err_t handle_post_updatefirmware(httpd_req_t *req)
 	};
 	ret = esp_https_ota(&ota_client);
 	if (ret == ESP_OK) {
-		httpd_resp_sendstr(req, "Firmware update OK, Rebooting...");
+		httpd_resp_sendstr(req, "Firmware update OK, Rebooting...<br><a href=\"/\">go back</a>");
 
 		// Give the HTTP server some time to send the answer
 		// before we turn off the lights.
