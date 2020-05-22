@@ -1,5 +1,7 @@
 #include "light_manager.h"
 
+#include <math.h>
+
 #include "led.h"
 
 ESP_EVENT_DEFINE_BASE(LIGHT_MANAGER_EVENT);
@@ -60,6 +62,19 @@ static unsigned clamp(unsigned x, unsigned  min, unsigned max)
 	}
 }
 
+static double clamp_double(double x, double  min, double max)
+{
+	if (isnan(x)) {
+		return 0;
+	} else if (x < min) {
+		return min;
+	} else if (x > max) {
+		return max;
+	} else {
+		return x;
+	}
+}
+
 static void update_cold_warm_from_brightness_temperature()
 {
 	unsigned desired_warm = state.brightness * state.temperature;
@@ -77,30 +92,35 @@ void light_manager_init()
 
 void set_warm(unsigned intensity)
 {
+	intensity = clamp(intensity, 0, MAX_ONE_CHANNEL);
 	update_state_warm(intensity);
 	update_brightness_temperature_from_cold_warm();
 }
 
 void set_cold(unsigned intensity)
 {
+	intensity = clamp(intensity, 0, MAX_ONE_CHANNEL);
 	update_state_cold(intensity);
 	update_brightness_temperature_from_cold_warm();
 }
 
 void set_brightness(unsigned brightness)
 {
+	brightness = clamp(brightness, 0, MAX_TWO_CHANNELS);
 	update_state_brightness(brightness);
 	update_cold_warm_from_brightness_temperature();
 }
 
 void set_temperature(double temperature)
 {
+	temperature = clamp_double(temperature, 0.0, 1.0);
 	update_state_temperature(temperature);
 	update_cold_warm_from_brightness_temperature();
 }
 
 void set_brightness_auto(unsigned brightness)
 {
+	brightness = clamp(brightness, 0, MAX_TWO_CHANNELS);
 	update_state_brightness(brightness);
 	update_state_temperature(0.5 * (((double) brightness) / ((double) MAX_TWO_CHANNELS)));
 	update_cold_warm_from_brightness_temperature();
