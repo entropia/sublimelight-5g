@@ -122,6 +122,6 @@ void set_brightness_auto(unsigned brightness)
 {
 	brightness = clamp(brightness, 0, MAX_TWO_CHANNELS);
 	update_state_brightness(brightness);
-	update_state_temperature(0.5 * (((double) brightness) / ((double) MAX_TWO_CHANNELS)));
+	update_state_temperature(1.0 - (0.5 * (((double) brightness) / ((double) MAX_TWO_CHANNELS))));
 	update_cold_warm_from_brightness_temperature();
 }
