@@ -11,11 +11,11 @@ config SL5G_WIFI_PASSWORD
     help
 	WiFi password (WPA or WPA2) to use.
 
-config SL5G_DEFAULT_DEVICE_NAME
-    string "Default device name"
-    default "sl5g99"
+config SL5G_DEFAULT_DEVICE_ID
+    string "Default device ID"
+    default "99"
     help
-        The default name for the device. The device name is used to build the MQTT prefix.
+        The default ID for the device. The device ID is used to build the MQTT prefix.
 
 config SL5G_DEFAULT_MQTT_BROKER_URI
     string "Default MQTT broker URI"

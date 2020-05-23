@@ -197,10 +197,10 @@ static esp_mqtt_client_handle_t start_mqtt_client()
 	free(topic_temperature);
 	topic_temperature = NULL;
 
-	asprintf(&topic_warm, "cmnd/%s/WARM", config->device_name);
-	asprintf(&topic_cold, "cmnd/%s/COLD", config->device_name);
-	asprintf(&topic_brightness, "cmnd/%s/BRIGHTNESS", config->device_name);
-	asprintf(&topic_temperature, "cmnd/%s/TEMPERATURE", config->device_name);
+	asprintf(&topic_warm, "cmnd/sl5g%s/WARM", config->device_id);
+	asprintf(&topic_cold, "cmnd/sl5g%s/COLD", config->device_id);
+	asprintf(&topic_brightness, "cmnd/sl5g%s/BRIGHTNESS", config->device_id);
+	asprintf(&topic_temperature, "cmnd/sl5g%s/TEMPERATURE", config->device_id);
 
 	esp_mqtt_client_config_t client_config = {
 		// No need to copy the URL, the MQTT client internally does a strdup

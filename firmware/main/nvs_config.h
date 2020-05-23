@@ -13,7 +13,7 @@
 #include <esp_event.h>
 
 typedef struct {
-	char *device_name;
+	char *device_id;
 	char *mqtt_broker_uri;
 } nvs_config_t;
 

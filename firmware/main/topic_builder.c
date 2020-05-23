@@ -71,7 +71,7 @@ static void build_topics()
 		//stat_map[i] = *entry;
 		//entry->event = i;
 		stat_map[i].event = i; // Why does this work?
-		asprintf(&stat_map[i].topic, "%s/%s/%s", STAT_TOPIC_PREFIX, config->device_name, STAT_TOPIC_SUFFIXES[i]);
+		asprintf(&stat_map[i].topic, "%s/%s/%s", STAT_TOPIC_PREFIX, config->device_id, STAT_TOPIC_SUFFIXES[i]);
 	}
 
 	for (int i = 0; i < 6; i++)

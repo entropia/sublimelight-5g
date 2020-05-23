@@ -8,7 +8,8 @@
 static const char *TAG = "sl5g_nvs_config";
 
 static const char *NVS_NAMESPACE = "sl5g";
-static const char *NVS_KEY_DEVICE_NAME = "device_name";
+// For backward compatibility
+static const char *NVS_KEY_DEVICE_ID = "device_name";
 static const char *NVS_KEY_MQTT_BROKER_URI = "mqtt_uri";
 
 ESP_EVENT_DEFINE_BASE(NVS_CONFIG_EVENT);
@@ -29,7 +30,7 @@ static nvs_config_t *nvs_new_empty_config(void)
 	nvs_config_t *new_config = malloc(sizeof(nvs_config_t));
 	assert(new_config);
 
-	new_config->device_name = strdup(CONFIG_SL5G_DEFAULT_DEVICE_NAME);
+	new_config->device_id = strdup(CONFIG_SL5G_DEFAULT_DEVICE_ID);
 	new_config->mqtt_broker_uri = strdup(CONFIG_SL5G_DEFAULT_MQTT_BROKER_URI);
 
 	return new_config;
@@ -60,14 +61,14 @@ nvs_config_t *nvs_config_get(void)
 	ESP_ERROR_CHECK(ret);
 
 	// TODO: We may want to cache this
-	char *device_name = get_str_alloc(nvsh, NVS_KEY_DEVICE_NAME);
-	if (!device_name) {
+	char *device_id = get_str_alloc(nvsh, NVS_KEY_DEVICE_ID);
+	if (!device_id) {
 		return nvs_new_empty_config();
 	}
 
 	char *mqtt_broker_uri = get_str_alloc(nvsh, NVS_KEY_MQTT_BROKER_URI);
 	if (!mqtt_broker_uri) {
-		free(device_name);
+		free(device_id);
 		return nvs_new_empty_config();
 	}
 
@@ -76,7 +77,7 @@ nvs_config_t *nvs_config_get(void)
 	nvs_config_t *result = malloc(sizeof(nvs_config_t));
 	assert(result);
 	*result = (nvs_config_t) {
-		.device_name = device_name,
+		.device_id = device_id,
 		.mqtt_broker_uri = mqtt_broker_uri,
 	};
 
@@ -88,7 +89,7 @@ void nvs_config_update(nvs_config_t *new_config)
 	nvs_handle_t nvsh;
 	ESP_ERROR_CHECK(nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvsh));
 
-	ESP_ERROR_CHECK(nvs_set_str(nvsh, NVS_KEY_DEVICE_NAME, new_config->device_name));
+	ESP_ERROR_CHECK(nvs_set_str(nvsh, NVS_KEY_DEVICE_ID, new_config->device_id));
 	ESP_ERROR_CHECK(nvs_set_str(nvsh, NVS_KEY_MQTT_BROKER_URI, new_config->mqtt_broker_uri));
 
 	ESP_ERROR_CHECK(nvs_commit(nvsh));
@@ -99,7 +100,7 @@ void nvs_config_update(nvs_config_t *new_config)
 
 void nvs_config_free(nvs_config_t *config)
 {
-	free(config->device_name);
+	free(config->device_id);
 	free(config->mqtt_broker_uri);
 	free(config);
 }
