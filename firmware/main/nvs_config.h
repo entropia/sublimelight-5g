@@ -14,6 +14,7 @@
 
 typedef struct {
 	char *device_id;
+	char *room_name;
 	char *mqtt_broker_uri;
 } nvs_config_t;
 

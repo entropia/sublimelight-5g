@@ -75,7 +75,7 @@ static esp_err_t handle_get_root(httpd_req_t *req)
 	char *html = NULL;
 	int written = asprintf(&html, info_page_html,
 			       GIT_REVISION_ID, __DATE__ " " __TIME__,
-			       config->device_id, config->mqtt_broker_uri);
+	                       config->device_id, config->room_name, config->mqtt_broker_uri);
 	assert(written > 0);
 
 	httpd_resp_send(req, html, written);
@@ -113,6 +113,16 @@ static esp_err_t handle_post_updateconfig(httpd_req_t *req)
 		goto out_bad_request;
 	}
 	config->device_id = strdup(req_value);
+
+	ret = httpd_query_key_value(req_data, "roomname", req_value, req->content_len);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	ret = url_decode_in_place(req_value);
+	if (ret != ESP_OK) {
+		goto out_bad_request;
+	}
+	config->room_name = strdup(req_value);
 
 	ret = httpd_query_key_value(req_data, "broker", req_value, req->content_len);
 	if (ret != ESP_OK) {
