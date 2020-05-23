@@ -77,7 +77,7 @@ static void build_topics()
 	for (int i = 0; i < 6; i++)
 	{
 		cmnd_map[i].event = i;
-		asprintf(&cmnd_map[i].topic, "%s", CMND_TOPIC_SUFFIXES[i]);
+		asprintf(&cmnd_map[i].topic, "%s%s/%s", CMND_TOPIC_PREFIX, config->device_id, CMND_TOPIC_SUFFIXES[i]);
 	}
 }
 

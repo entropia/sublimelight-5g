@@ -118,9 +118,7 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 	memcpy(topic, event->topic, event->topic_len);
 	topic[event->topic_len] = '\0';
 
-	// We only receive events that we have subscribed to and trust the MQTT broker.
-	char *topic_suffix = strrchr(topic, '/') + 1;
-	cmnd_event_t cmnd_event = cmnd_topic_lookup(topic_suffix);
+	cmnd_event_t cmnd_event = cmnd_topic_lookup(topic);
 
 	// Special case for temperature as it carries a double instead of unsigned payload
 	if (cmnd_event == CMND_TEMPERATURE) {
