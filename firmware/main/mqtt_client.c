@@ -145,18 +145,15 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 			ESP_LOGI(TAG, "Not yet implemented");
 			break;
 		case CMND_WARM:
-			ESP_LOGI(TAG, "Recognized topic WARM. Setting to %u", intensity);
 			set_warm(intensity);
 			break;
 		case CMND_COLD:
-			ESP_LOGI(TAG, "Recognized topic COLD. Setting to %u", intensity);
 			set_cold(intensity);
 			break;
 		case CMND_BRIGHTNESS_AUTO:
-			ESP_LOGI(TAG, "Not yet implemented");
+			set_brightness_auto(intensity);
 			break;
 		case CMND_BRIGHTNESS:
-			ESP_LOGI(TAG, "Recognized topic BRIGHTESS. Setting to %u", intensity);
 			set_brightness(intensity);
 			break;
 		default:
