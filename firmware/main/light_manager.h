@@ -4,6 +4,8 @@
 #include <esp_event.h>
 
 typedef struct {
+	bool enabled;
+
 	unsigned warm_value;
 	unsigned cold_value;
 
@@ -14,7 +16,7 @@ typedef struct {
 ESP_EVENT_DECLARE_BASE(LIGHT_MANAGER_EVENT);
 
 typedef enum {
-	LIGHT_MANAGER_EVENT_STATE_CHANGED,
+	LIGHT_MANAGER_EVENT_ENABLED_CHANGED,
 	LIGHT_MANAGER_EVENT_WARM_CHANGED,
 	LIGHT_MANAGER_EVENT_COLD_CHANGED,
 	LIGHT_MANAGER_EVENT_BRIGHTNESS_CHANGED,
@@ -22,6 +24,8 @@ typedef enum {
 } light_manager_event_t;
 
 void light_manager_init();
+
+void set_enabled(bool enabled);
 
 void set_warm(unsigned intensity);
 

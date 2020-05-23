@@ -52,27 +52,34 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 {
 	char *value = NULL;
 	char *topic = NULL;
-	switch (event_id)
-	{
-		case LIGHT_MANAGER_EVENT_WARM_CHANGED:
-			asprintf(&value, "%d", state->warm_value);
-			topic = stat_topic_lookup(STAT_WARM);
-			break;
-		case LIGHT_MANAGER_EVENT_COLD_CHANGED:
-			asprintf(&value, "%d", state->cold_value);
-			topic = stat_topic_lookup(STAT_COLD);
-			break;
-		case LIGHT_MANAGER_EVENT_BRIGHTNESS_CHANGED:
-			asprintf(&value, "%d", state->brightness);
-			topic = stat_topic_lookup(STAT_BRIGHTNESS);
-			break;
-		case LIGHT_MANAGER_EVENT_TEMPERATURE_CHANGED:
-			asprintf(&value, "%f", state->temperature);
-			topic = stat_topic_lookup(STAT_TEMPERATURE);
-			break;
-		default:
-			ESP_LOGE(TAG, "Ignoring unknown state update from light manager: %d", event_id);
-			return;
+	switch (event_id) {
+	case LIGHT_MANAGER_EVENT_ENABLED_CHANGED:
+		if (state->enabled) {
+			value = strdup("ON");
+		} else {
+			value = strdup("OFF");
+		}
+		topic = stat_topic_lookup(STAT_ENABLE);
+		break;
+	case LIGHT_MANAGER_EVENT_WARM_CHANGED:
+		asprintf(&value, "%d", state->warm_value);
+		topic = stat_topic_lookup(STAT_WARM);
+		break;
+	case LIGHT_MANAGER_EVENT_COLD_CHANGED:
+		asprintf(&value, "%d", state->cold_value);
+		topic = stat_topic_lookup(STAT_COLD);
+		break;
+	case LIGHT_MANAGER_EVENT_BRIGHTNESS_CHANGED:
+		asprintf(&value, "%d", state->brightness);
+		topic = stat_topic_lookup(STAT_BRIGHTNESS);
+		break;
+	case LIGHT_MANAGER_EVENT_TEMPERATURE_CHANGED:
+		asprintf(&value, "%f", state->temperature);
+		topic = stat_topic_lookup(STAT_TEMPERATURE);
+		break;
+	default:
+		ESP_LOGE(TAG, "Ignoring unknown state update from light manager: %d", event_id);
+		return;
 	}
 	// TODO: Error handling
 	esp_mqtt_client_publish(client, topic, value, 0, 1, true);
@@ -126,8 +133,23 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 			goto out;
 		}
 
-		ESP_LOGI(TAG, "Recognized topic TEMPERATURE. Setting to %f", temperature);
 		set_temperature(temperature);
+		goto out;
+	}
+
+	// Special case for enabled as it carries an "on"/"off" instead of unsigned payload
+	if (cmnd_event == CMND_ENABLE) {
+		bool enabled;
+		if (strcasecmp(data, "on") == 0) {
+			enabled = true;
+		} else if (strcasecmp(data, "off") == 0) {
+			enabled = false;
+		} else {
+			ESP_LOGW(TAG, "Received malformed MQTT (enabled): Topic %s, data %s\n", topic, data);
+			goto out;
+		}
+
+		set_enabled(enabled);
 		goto out;
 	}
 
@@ -141,9 +163,6 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 
 	switch (cmnd_event)
 	{
-		case CMND_ENABLE:
-			ESP_LOGI(TAG, "Not yet implemented");
-			break;
 		case CMND_WARM:
 			set_warm(intensity);
 			break;

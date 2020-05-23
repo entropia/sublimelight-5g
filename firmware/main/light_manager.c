@@ -13,25 +13,47 @@ light_manager_state_t state;
 
 static void update_state(light_manager_event_t event)
 {
-	led_set(WARM_WHITE, state.warm_value);
-	led_set(COLD_WHITE, state.cold_value);
+	if (state.enabled) {
+		led_set(WARM_WHITE, state.warm_value);
+		led_set(COLD_WHITE, state.cold_value);
+	} else {
+		led_set(WARM_WHITE, 0);
+		led_set(COLD_WHITE, 0);
+	}
 	esp_event_post(LIGHT_MANAGER_EVENT, event, &state, sizeof(light_manager_state_t), portMAX_DELAY);
+}
+
+static void update_state_enabled(bool enabled)
+{
+	state.enabled = enabled;
+	update_state(LIGHT_MANAGER_EVENT_ENABLED_CHANGED);
+}
+
+static void enable_if_disabled_and(bool condition)
+{
+	if (!state.enabled && condition) {
+		state.enabled = true;
+		update_state(LIGHT_MANAGER_EVENT_ENABLED_CHANGED);
+	}
 }
 
 static void update_state_warm(unsigned intensity)
 {
+	enable_if_disabled_and(intensity > 0);
 	state.warm_value = intensity;
 	update_state(LIGHT_MANAGER_EVENT_WARM_CHANGED);
 }
 
 static void update_state_cold(unsigned intensity)
 {
+	enable_if_disabled_and(intensity > 0);
 	state.cold_value = intensity;
 	update_state(LIGHT_MANAGER_EVENT_COLD_CHANGED);
 }
 
 static void update_state_brightness(unsigned brightness)
 {
+	enable_if_disabled_and(brightness > 0);
 	state.brightness = brightness;
 	update_state(LIGHT_MANAGER_EVENT_BRIGHTNESS_CHANGED);
 }
@@ -88,6 +110,11 @@ void light_manager_init()
 {
 	state.warm_value = 0;
 	state.cold_value = 0;
+}
+
+void set_enabled(bool enabled)
+{
+	update_state_enabled(enabled);
 }
 
 void set_warm(unsigned intensity)
