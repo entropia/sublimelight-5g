@@ -26,4 +26,6 @@ cmnd_event_t cmnd_topic_lookup(char *topic);
 
 void topic_builder_init();
 
+void subscribe_to_initial_topics();
+
 #endif

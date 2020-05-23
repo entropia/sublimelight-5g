@@ -11,33 +11,29 @@
 static const char *TAG = "SL5G_MQTT_CLIENT";
 
 static esp_mqtt_client_handle_t client = NULL;
-static char *topic_warm = NULL;
-static char *topic_cold = NULL;
-static char *topic_brightness = NULL;
-static char *topic_temperature = NULL;
-
 
 static char *current_ip = NULL;
 
-static void subscribe_to_topics(esp_mqtt_client_handle_t client)
+bool mqtt_client_subscribe(char *topic)
 {
-	int msg_id = esp_mqtt_client_subscribe(client, topic_warm, 1);
+	ESP_LOGI(TAG, "Subscribing to %s", topic);
+	int msg_id = esp_mqtt_client_subscribe(client, topic, 1);
 	if (msg_id == -1) {
-		ESP_LOGW(TAG, "Could not subscribe to warm-white topic");
+		ESP_LOGW(TAG, "Could not subscribe to topic %s", topic);
 	}
-	msg_id = esp_mqtt_client_subscribe(client, topic_cold, 1);
+
+	return (msg_id != -1);
+}
+
+bool mqtt_client_unsubscribe(char *topic)
+{
+	ESP_LOGI(TAG, "Unsubscribing from %s", topic);
+	int msg_id = esp_mqtt_client_unsubscribe(client, topic);
 	if (msg_id == -1) {
-		ESP_LOGW(TAG, "Could not subscribe to cold-white topic");
+		ESP_LOGW(TAG, "Could not unsubscribe from topic %s", topic);
 	}
-	msg_id = esp_mqtt_client_subscribe(client, topic_brightness, 1);
-	if (msg_id == -1) {
-		ESP_LOGW(TAG, "Could not subscribe to brightness topic");
-	}
-	msg_id = esp_mqtt_client_subscribe(client, topic_temperature, 1);
-	if (msg_id == -1) {
-		ESP_LOGW(TAG, "Could not subscribe to temperature topic");
-	}
-	ESP_LOGI(TAG, "Topic subscription requests sent");
+
+	return (msg_id != -1);
 }
 
 static void publish_current_ip(esp_mqtt_client_handle_t client)
@@ -88,7 +84,7 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
 	esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t) event_data;
-	subscribe_to_topics(event->client);
+	subscribe_to_initial_topics();
 	publish_current_ip(event->client);
 }
 
@@ -183,27 +179,11 @@ static esp_mqtt_client_handle_t start_mqtt_client()
 {
 	nvs_config_t *config = nvs_config_get();
 
-	free(topic_warm);
-	topic_warm = NULL;
-
-	free(topic_cold);
-	topic_cold = NULL;
-
-	free(topic_brightness);
-	topic_brightness = NULL;
-
-	free(topic_temperature);
-	topic_temperature = NULL;
-
-	asprintf(&topic_warm, "cmnd/sl5g%s/WARM", config->device_id);
-	asprintf(&topic_cold, "cmnd/sl5g%s/COLD", config->device_id);
-	asprintf(&topic_brightness, "cmnd/sl5g%s/BRIGHTNESS", config->device_id);
-	asprintf(&topic_temperature, "cmnd/sl5g%s/TEMPERATURE", config->device_id);
-
 	esp_mqtt_client_config_t client_config = {
 		// No need to copy the URL, the MQTT client internally does a strdup
 		.uri = config->mqtt_broker_uri,
 	};
+
 	esp_mqtt_client_handle_t client = esp_mqtt_client_init(&client_config);
 	assert(client);
 	esp_mqtt_client_register_event(client, MQTT_EVENT_CONNECTED, on_mqtt_connected, client);

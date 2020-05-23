@@ -1,8 +1,9 @@
 #include "topic_builder.h"
 
 #include <esp_log.h>
-#include <mqtt_client.h>
+#include <string.h>
 
+#include "mqtt_client.h"
 #include "nvs_config.h"
 
 static const char *TAG = "SL5G_TOPIC_BUILDER";
@@ -60,6 +61,13 @@ cmnd_event_t cmnd_topic_lookup(char *topic)
 		}
 	}
 	return -1;
+}
+
+void subscribe_to_initial_topics()
+{
+	for (int i = 0; i < 6; i++) {
+		mqtt_client_subscribe(cmnd_map[i].topic);
+	}
 }
 
 static void build_topics()
