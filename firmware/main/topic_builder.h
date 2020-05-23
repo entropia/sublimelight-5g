@@ -8,6 +8,8 @@ typedef enum {
 	CMND_BRIGHTNESS_AUTO,
 	CMND_BRIGHTNESS,
 	CMND_TEMPERATURE,
+
+	CMND_END,
 } cmnd_event_t;
 
 typedef enum {
@@ -18,6 +20,8 @@ typedef enum {
 	STAT_BRIGHTNESS,
 	STAT_TEMPERATURE,
 	STAT_IP,
+
+	STAT_END,
 } stat_event_t;
 
 char* stat_topic_lookup(stat_event_t event);

@@ -11,7 +11,7 @@ static const char *TAG = "SL5G_TOPIC_BUILDER";
 static const char *CMND_TOPIC_PREFIX = "cmnd/sl5g";
 static const char *STAT_TOPIC_PREFIX = "stat/sl5g/id";
 
-static const char *CMND_TOPIC_SUFFIXES[6] =
+static const char *CMND_TOPIC_SUFFIXES[CMND_END] =
 {
 		"ENABLE",
 		"WARM",
@@ -21,7 +21,7 @@ static const char *CMND_TOPIC_SUFFIXES[6] =
 		"TEMPERATURE"
 };
 
-static const char *STAT_TOPIC_SUFFIXES[7] =
+static const char *STAT_TOPIC_SUFFIXES[STAT_END] =
 {
 		"ENABLE",
 		"WARM",
@@ -44,8 +44,8 @@ typedef struct
 	char *topic;
 } stat_map_entry_t;
 
-cmnd_map_entry_t cmnd_map[6];
-stat_map_entry_t stat_map[7];
+cmnd_map_entry_t cmnd_map[CMND_END];
+stat_map_entry_t stat_map[STAT_END];
 
 char* stat_topic_lookup(stat_event_t event)
 {
@@ -54,7 +54,7 @@ char* stat_topic_lookup(stat_event_t event)
 
 cmnd_event_t cmnd_topic_lookup(char *topic)
 {
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < CMND_END; i++)
 	{
 		if(!strcmp(topic, cmnd_map[i].topic)) {
 			return cmnd_map[i].event;
@@ -65,7 +65,7 @@ cmnd_event_t cmnd_topic_lookup(char *topic)
 
 void subscribe_to_initial_topics()
 {
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < CMND_END; i++) {
 		mqtt_client_subscribe(cmnd_map[i].topic);
 	}
 }
@@ -73,7 +73,7 @@ void subscribe_to_initial_topics()
 static void build_topics()
 {
 	nvs_config_t *config = nvs_config_get();
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i < STAT_END; i++)
 	{
 		//stat_map_entry_t *entry = malloc(sizeof(stat_map_entry_t));
 		//stat_map[i] = *entry;
@@ -82,7 +82,7 @@ static void build_topics()
 		asprintf(&stat_map[i].topic, "%s/%s/%s", STAT_TOPIC_PREFIX, config->device_id, STAT_TOPIC_SUFFIXES[i]);
 	}
 
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < CMND_END; i++)
 	{
 		cmnd_map[i].event = i;
 		asprintf(&cmnd_map[i].topic, "%s%s/%s", CMND_TOPIC_PREFIX, config->device_id, CMND_TOPIC_SUFFIXES[i]);
