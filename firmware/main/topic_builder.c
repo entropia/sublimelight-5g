@@ -8,7 +8,7 @@
 
 static const char *TAG = "SL5G_TOPIC_BUILDER";
 
-static const char *CMND_TOPIC_PREFIX = "cmnd/sl5g";
+static const char *CMND_TOPIC_PREFIX = "cmnd/sl5g/id";
 static const char *STAT_TOPIC_PREFIX = "stat/sl5g/id";
 
 static const char *CMND_TOPIC_SUFFIXES[CMND_END] =
@@ -85,7 +85,7 @@ static void build_topics()
 	for (int i = 0; i < CMND_END; i++)
 	{
 		cmnd_map[i].event = i;
-		asprintf(&cmnd_map[i].topic, "%s%s/%s", CMND_TOPIC_PREFIX, config->device_id, CMND_TOPIC_SUFFIXES[i]);
+		asprintf(&cmnd_map[i].topic, "%s/%s/%s", CMND_TOPIC_PREFIX, config->device_id, CMND_TOPIC_SUFFIXES[i]);
 	}
 }
 
