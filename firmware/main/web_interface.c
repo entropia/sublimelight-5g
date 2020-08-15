@@ -253,9 +253,12 @@ static httpd_handle_t start_web_interface()
 	return server;
 }
 
-static void stop_web_interface(httpd_handle_t server)
+static void stop_web_interface(httpd_handle_t *server)
 {
-	httpd_stop(server);
+	// BUG double-free is possible here.
+	httpd_stop(*server);
+	// TODO check whether this helps
+	*server = NULL;
 }
 
 static void on_dhcp_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -276,7 +279,7 @@ static void on_wifi_disconnect(void *arg, esp_event_base_t base, int32_t event_i
 
 	if (*server != NULL) {
 		ESP_LOGI(TAG, "Stopping HTTP server after Wifi disconnect");
-		stop_web_interface(*server);
+		stop_web_interface(server);
 	}
 }
 
