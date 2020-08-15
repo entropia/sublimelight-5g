@@ -102,24 +102,19 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 	ESP_LOGI(TAG, "MQTT packet received. Topic: %.*s, Data: %.*s",
 		 event->topic_len, event->topic, event->data_len, event->data);
 
-	// We cannot rely on event->data being NULL-terminated, so copy it into another buffer
-	char *data = malloc(event->data_len + 1);
+	// We cannot rely on event->data and event->topic being NULL-terminated, so copy them into another buffer
+	char *data  = strndup(event->data, event->data_len);
 	if (!data) {
 		ESP_LOGI(TAG, "MQTT packet ignored as data is too large.");
 		return;
 	}
-	memcpy(data, event->data, event->data_len);
-	data[event->data_len] = '\0';
 
-	// We cannot rely on event->topic being NULL-terminated, so copy it into another buffer
-	char *topic = malloc(event->topic_len + 1);
+	char *topic = strndup(event->topic, event->topic_len);
 	if (!topic) {
 		ESP_LOGI(TAG, "MQTT packet ignored as topic is too large.");
 		free(data);
 		return;
 	}
-	memcpy(topic, event->topic, event->topic_len);
-	topic[event->topic_len] = '\0';
 
 	cmnd_event_t cmnd_event = cmnd_topic_lookup(topic);
 
