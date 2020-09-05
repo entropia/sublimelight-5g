@@ -28,7 +28,7 @@ char* stat_topic_lookup(stat_event_t event);
 
 cmnd_event_t cmnd_topic_lookup(char *topic);
 
-void topic_builder_init();
+void rebuild_initial_topics();
 
 void subscribe_to_initial_topics();
 

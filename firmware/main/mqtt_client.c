@@ -188,6 +188,8 @@ static void on_light_manager_state_changed(void *handler_args, esp_event_base_t 
 
 static esp_mqtt_client_handle_t start_mqtt_client()
 {
+	rebuild_initial_topics();
+
 	nvs_config_t *config = nvs_config_get();
 
 	esp_mqtt_client_config_t client_config = {

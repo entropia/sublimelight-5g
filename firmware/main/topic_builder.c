@@ -73,7 +73,7 @@ void subscribe_to_initial_topics()
 	}
 }
 
-static void build_topics()
+void rebuild_initial_topics()
 {
 	nvs_config_t *config = nvs_config_get();
 	for (int i = 0; i < STAT_END; i++) {
@@ -94,18 +94,4 @@ static void build_topics()
 		asprintf(&cmnd_map[i].topic, "%s/%s/%s", CMND_TOPIC_PREFIX_ROOM, config->room_name, CMND_TOPIC_SUFFIXES[cmnd]);
 	}
 	assert(i == CMND_MAP_ENTRIES);
-}
-
-static void on_nvs_config_changed(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
-{
-	(void) arg;
-
-	// TODO: free()
-	build_topics();
-}
-
-void topic_builder_init()
-{
-	ESP_ERROR_CHECK(esp_event_handler_register(NVS_CONFIG_EVENT, NVS_CONFIG_EVENT_CHANGED, &on_nvs_config_changed, NULL));
-	build_topics();
 }
