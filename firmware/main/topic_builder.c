@@ -75,6 +75,16 @@ void subscribe_to_initial_topics()
 
 void rebuild_initial_topics()
 {
+	for (int i = 0; i < STAT_END; i++) {
+		free(stat_map[i].topic);
+		stat_map[i].topic = NULL;
+	}
+
+	for (int i = 0; i < CMND_MAP_ENTRIES; i++) {
+		free(cmnd_map[i].topic);
+		cmnd_map[i].topic = NULL;
+	}
+
 	nvs_config_t *config = nvs_config_get();
 	for (int i = 0; i < STAT_END; i++) {
 		//stat_map_entry_t *entry = malloc(sizeof(stat_map_entry_t));
