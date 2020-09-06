@@ -36,7 +36,7 @@ bool mqtt_client_unsubscribe(char *topic)
 	return (msg_id != -1);
 }
 
-static void publish_current_ip(esp_mqtt_client_handle_t client)
+static void publish_current_ip()
 {
 	stat_event_t event = STAT_IP;
 	char *stat_topic_ip = stat_topic_lookup(event);
@@ -48,7 +48,7 @@ static void publish_current_ip(esp_mqtt_client_handle_t client)
 	ESP_LOGI(TAG, "IP update published. Address is %s", current_ip);
 }
 
-static void publish_current_state(esp_mqtt_client_handle_t client, light_manager_state_t *state, int32_t event_id)
+static void publish_current_state(light_manager_state_t *state, int32_t event_id)
 {
 	char *value = NULL;
 	char *topic = NULL;
@@ -90,9 +90,9 @@ static void publish_current_state(esp_mqtt_client_handle_t client, light_manager
 
 static void on_mqtt_connected(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-	esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t) event_data;
+	ESP_LOGI(TAG, "MQTT client connected, subscribing to initial topics");
 	subscribe_to_initial_topics();
-	publish_current_ip(event->client);
+	publish_current_ip();
 }
 
 static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -181,12 +181,11 @@ out:
 
 static void on_light_manager_state_changed(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) handler_args;
 	light_manager_state_t *state = (light_manager_state_t*) event_data;
-	publish_current_state(*client, state, event_id);
+	publish_current_state(state, event_id);
 }
 
-static esp_mqtt_client_handle_t start_mqtt_client()
+static void start_mqtt_client()
 {
 	rebuild_initial_topics();
 
@@ -197,28 +196,27 @@ static esp_mqtt_client_handle_t start_mqtt_client()
 		.uri = config->mqtt_broker_uri,
 	};
 
-	esp_mqtt_client_handle_t client = esp_mqtt_client_init(&client_config);
+	client = esp_mqtt_client_init(&client_config);
 	assert(client);
-	esp_mqtt_client_register_event(client, MQTT_EVENT_CONNECTED, on_mqtt_connected, client);
-	esp_mqtt_client_register_event(client, MQTT_EVENT_DATA, on_mqtt_received, client);
+	esp_mqtt_client_register_event(client, MQTT_EVENT_CONNECTED, on_mqtt_connected, NULL);
+	esp_mqtt_client_register_event(client, MQTT_EVENT_DATA, on_mqtt_received, NULL);
 	esp_mqtt_client_start(client);
+	ESP_LOGI(TAG, "MQTT client started");
 
 	nvs_config_free(config);
-
-	return client;
 }
 
-static void stop_mqtt_client(esp_mqtt_client_handle_t client)
+static void stop_mqtt_client()
 {
 	ESP_LOGI(TAG, "Shutting down MQTT client");
 	esp_mqtt_client_stop(client);
 	esp_mqtt_client_destroy(client);
+	client = NULL;
 	led_fallback();
 }
 
 static void on_dhcp_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) arg;
 	ip_event_got_ip_t *event = (ip_event_got_ip_t*) event_data;
 
 	free(current_ip);
@@ -226,41 +224,39 @@ static void on_dhcp_got_ip(void *arg, esp_event_base_t base, int32_t event_id, v
 	esp_ip4_addr_t ip = event->ip_info.ip;
 	asprintf(&current_ip, IPSTR, IP2STR(&ip));
 
-	if (*client == NULL) {
+	if (client == NULL) {
 		ESP_LOGI(TAG, "Starting MQTT client");
-		*client = start_mqtt_client();
+		start_mqtt_client();
 		// The client will publish our IP after startup
 	} else {
 		ESP_LOGW(TAG, "Got new IP %s but MQTT client already running", current_ip);
-		publish_current_ip(*client);
+		publish_current_ip();
 	}
 }
 
 static void on_wifi_disconnect(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) arg;
-
-	if (*client != NULL) {
+	if (client != NULL) {
 		ESP_LOGI(TAG, "Stopping MQTT client after Wifi disconnect");
-		stop_mqtt_client(*client);
+		stop_mqtt_client(client);
 	}
 }
 
 static void on_nvs_config_changed(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-	esp_mqtt_client_handle_t *client = (esp_mqtt_client_handle_t*) arg;
-
-	if (*client != NULL) {
-		stop_mqtt_client(*client);
-		start_mqtt_client(*client);
+	if (client != NULL) {
+		ESP_LOGI(TAG, "Stopping MQTT client after NVS config change");
+		stop_mqtt_client(client);
+		ESP_LOGI(TAG, "Restarting MQTT client after NVS config change");
+		start_mqtt_client(client);
 	}
 }
 
 void mqtt_client_init(void)
 {
-	ESP_ERROR_CHECK(esp_event_handler_register(NVS_CONFIG_EVENT, NVS_CONFIG_EVENT_CHANGED, &on_nvs_config_changed, &client));
-	ESP_ERROR_CHECK(esp_event_handler_register(LIGHT_MANAGER_EVENT, ESP_EVENT_ANY_ID, &on_light_manager_state_changed, &client));
+	ESP_ERROR_CHECK(esp_event_handler_register(NVS_CONFIG_EVENT, NVS_CONFIG_EVENT_CHANGED, &on_nvs_config_changed, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(LIGHT_MANAGER_EVENT, ESP_EVENT_ANY_ID, &on_light_manager_state_changed, NULL));
 
-	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_dhcp_got_ip, &client));
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect, &client));
+	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_dhcp_got_ip, NULL));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect, NULL));
 }
