@@ -146,8 +146,7 @@ class EventQueue():
             # This is a new panel. Make a note of it and request it to update
             new_panel = self.Panel(panel_id, msg.ip, self.PanelState.NEW)
             self.panels.append(new_panel)
-            self.messages.append("Update disabled")
-            # art_panel_update(new_panel, self)
+            start_panel_update(new_panel, self)
 
 
     def handle_update_requested(self, msg):
