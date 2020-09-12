@@ -87,7 +87,7 @@ static unsigned clamp(unsigned x, unsigned  min, unsigned max)
 static double clamp_double(double x, double  min, double max)
 {
 	if (isnan(x)) {
-		return 0;
+		return min;
 	} else if (x < min) {
 		return min;
 	} else if (x > max) {
