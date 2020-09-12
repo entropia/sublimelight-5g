@@ -102,7 +102,7 @@ void rebuild_stat_topics()
 	nvs_config_free(config);
 }
 
-static void foreach_current_group_topic(void (*action)(char *))
+static void foreach_current_group_topic(bool (*action)(char *))
 {
 	char *group = current_groups;
 	char *topic = NULL;
