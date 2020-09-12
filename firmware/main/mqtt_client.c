@@ -44,8 +44,9 @@ static void publish_current_ip()
 	int msg_id = esp_mqtt_client_publish(client, stat_topic_ip, current_ip, 0, 1, true);
 	if (msg_id == -1) {
 		ESP_LOGW(TAG, "Could not publish to IP topic");
+	} else {
+		ESP_LOGI(TAG, "IP update published. Address is %s", current_ip);
 	}
-	ESP_LOGI(TAG, "IP update published. Address is %s", current_ip);
 }
 
 static void publish_current_state(light_manager_state_t *state, int32_t event_id)
@@ -81,9 +82,13 @@ static void publish_current_state(light_manager_state_t *state, int32_t event_id
 		ESP_LOGE(TAG, "Ignoring unknown state update from light manager: %d", event_id);
 		return;
 	}
-	// TODO: Error handling
-	esp_mqtt_client_publish(client, topic, value, 0, 1, true);
-	ESP_LOGI(TAG, "Value update published. Topic is %s. Value is %s", topic, value);
+
+	int msg_id = esp_mqtt_client_publish(client, topic, value, 0, 1, true);
+	if (msg_id == -1) {
+		ESP_LOGW(TAG, "Could not publish value update. Topic is %s. Value is %s", topic, value);
+	} else {
+		ESP_LOGI(TAG, "Value update published. Topic is %s. Value is %s", topic, value);
+	}
 
 	free(value);
 }
