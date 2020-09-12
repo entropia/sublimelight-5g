@@ -65,7 +65,7 @@ void subscribe_to_initial_topics()
 	for (int i = 0; i < CMND_END; i++) {
 		asprintf(&topic, "%s/%s/%s", CMND_TOPIC_PREFIX_ID, config->device_id, CMND_MAP[i]);
 		mqtt_client_subscribe(topic);
-		asprintf(&topic, "%s/%s/%s", CMND_TOPIC_PREFIX_ROOM, config->device_id, CMND_MAP[i]);
+		asprintf(&topic, "%s/%s/%s", CMND_TOPIC_PREFIX_ROOM, config->room_name, CMND_MAP[i]);
 		mqtt_client_subscribe(topic);
 	}
 
