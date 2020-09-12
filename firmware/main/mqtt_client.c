@@ -36,6 +36,17 @@ bool mqtt_client_unsubscribe(char *topic)
 	return (msg_id != -1);
 }
 
+void mqtt_publish_group_state(char *groups)
+{
+	char *topic = stat_topic_lookup(STAT_GROUPS);
+	int msg_id = esp_mqtt_client_publish(client, topic, groups, 0, 1, true);
+	if (msg_id == -1) {
+		ESP_LOGW(TAG, "Could not publish to GROUPS topic");
+	} else {
+		ESP_LOGI(TAG, "GROUPS update published. Group list is %s", groups);
+	}
+}
+
 static void publish_current_ip()
 {
 	stat_event_t event = STAT_IP;
@@ -122,6 +133,17 @@ static void on_mqtt_received(void *handler_args, esp_event_base_t base, int32_t 
 	}
 
 	cmnd_event_t cmnd_event = cmnd_topic_lookup(topic);
+
+	// Special case for GROUPS: It carries a list of group names,
+	// which should be passed directly to the topic builder *and
+	// not freed*. The topic builder will take possession of the
+	// buffer, as that makes memory handling easier.
+	if (cmnd_event == CMND_GROUPS) {
+		set_group_membership(data);
+
+		free(topic);
+		return;
+	}
 
 	// Special case for temperature as it carries a double instead of unsigned payload
 	if (cmnd_event == CMND_TEMPERATURE) {

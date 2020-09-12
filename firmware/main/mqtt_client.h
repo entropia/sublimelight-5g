@@ -9,4 +9,6 @@ bool mqtt_client_subscribe(char *topic);
 
 bool mqtt_client_unsubscribe(char *topic);
 
+void mqtt_publish_group_state(char *groups);
+
 #endif

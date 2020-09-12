@@ -8,6 +8,7 @@ typedef enum {
 	CMND_BRIGHTNESS_AUTO,
 	CMND_BRIGHTNESS,
 	CMND_TEMPERATURE,
+	CMND_GROUPS,
 
 	CMND_END,
 } cmnd_event_t;
@@ -20,6 +21,7 @@ typedef enum {
 	STAT_BRIGHTNESS,
 	STAT_TEMPERATURE,
 	STAT_IP,
+	STAT_GROUPS,
 
 	STAT_END,
 } stat_event_t;
@@ -31,5 +33,7 @@ cmnd_event_t cmnd_topic_lookup(char *topic);
 void rebuild_stat_topics();
 
 void subscribe_to_initial_topics();
+
+void set_group_membership(char *group_list);
 
 #endif
