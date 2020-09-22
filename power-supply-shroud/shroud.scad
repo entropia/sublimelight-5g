@@ -1,21 +1,21 @@
 // For SP-150-24
-height = 49.5;
+height = 50;
 space_front = 30;
 
 // For RSP-150-27
 //height = 30;
 //space_front = 25;
 
-width = 99.6;
+width = 99;
 shroud_depth = 35;
 
-screw_depth = 23.8;
-screw_height = 11.0;
+screw_depth = 25;
+screw_height = 12.5;
 
 cable_pos_right = width - 22;
 cable_pos_left = width - 56;
 
-screw_hole = 3.5;
+screw_hole = 4;
 cable_hole = 17.5;
 
 wall = 1;
@@ -33,8 +33,8 @@ difference() {
          center = false);
     
     translate([wall / 2,
-           space_front + screw_depth + screw_hole / 2,
-           screw_height + screw_hole / 2])
+           space_front + screw_depth,
+           wall + screw_height])
     rotate([0, 90, 0])
     cylinder(h = 2*wall,
              r = screw_hole / 2,
@@ -42,8 +42,8 @@ difference() {
              $fn = 24);
 
     translate([wall + width + wall / 2,
-           space_front + screw_depth + screw_hole / 2,
-           screw_height + screw_hole / 2])
+           space_front + screw_depth,
+           wall + screw_height])
     rotate([0, 90, 0])
     cylinder(h = 2 * wall,
              r = screw_hole / 2,
