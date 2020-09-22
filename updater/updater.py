@@ -29,7 +29,7 @@ SL5G_UPDATE_ENDPOINT = "/updatefirmware"
 
 def get_my_ip(test_host):
     """Returns the IPv4 address this host uses when connecting to
-    test_host. If that address is a loopback address tries again using
+    test_host. If that address is a loopback address, tries again using
     1.1.1.1 as test_host."""
 
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -135,12 +135,11 @@ class EventQueue():
             # We have seen this panel before, assume it has rebooted and is therefore done.
             # However, remember that it may have got another IP address this time.
             panel = match[0]
+            panel.ip = msg.ip
             if panel.state in [self.PanelState.DOWNLOADING, self.PanelState.REBOOTED]:
-                panel.ip = msg.ip
                 panel.state = self.PanelState.REBOOTED
             else:
                 self.messages.append("!!! Panel {}: IP changed ({} -> {}) before reboot was due".format(panel_id, panel.ip, msg.ip))
-                self.panels[panel_id] = panel._update(ip=msg.ip)
 
         else:
             # This is a new panel. Make a note of it and request it to update
@@ -181,7 +180,7 @@ class EventQueue():
                 # This is not a problem.
                 panel.state = self.PanelState.DOWNLOADING
             else:
-                self.messages.append("!!! Panel {}: Spurious download".format(panel.id))
+                self.messages.append("!!! Panel {}: Spurious download".format(panel.panel_id))
 
 
     def handle_register_shutdown_hook(self, msg):
